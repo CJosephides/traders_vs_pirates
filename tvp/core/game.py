@@ -92,12 +92,12 @@ class Game:
 
             # Keep track of active player index.
             self.iactive = iplayer
-            
+
             # Make new game state, append to list.
             current_state = Game_State(self)
             self.states.append(current_state)
 
-            # Request action from player. 
+            # Request action from player.
             action = player.play(self.states)
 
             # Resolve action.
@@ -192,47 +192,47 @@ class Game:
         # Report, if requested.
         if report:
             print('Turn %d report. ' % self.turn)
-            print('Treasure value = %d (number = %d, value = %d).' % 
+            print('Treasure value = %d (number = %d, value = %d).' %
                   (treasure,
                    n_invest,
                    v_invest))
-            print('Security value = %d (number = %d).' % 
+            print('Security value = %d (number = %d).' %
                   (v_security,
                    n_security))
-            print('Piracy value = %d (number = %d).' % 
+            print('Piracy value = %d (number = %d).' %
                   (v_piracy,
                    n_piracy))
             print('Outcome = %s.' % outcome)
             for iplayer, player in enumerate(self.sequence):
-                print('%s score = %d (turn delta = %d).' 
-                        % (player.name, 
-                           player.score,
-                           player.score - old_scores[iplayer])) 
+                print('%s score = %d (turn delta = %d).'
+                      % (player.name,
+                         player.score,
+                         player.score - old_scores[iplayer]))
             print('===\n')
 
     def count_cards(self, card_type):
-        
-       n_cards = 0
-       v_cards = 0
 
-       # # Check pool.
-       for card in self.pool:
-           if card[0] == card_type:
-               n_cards += 1
-               v_cards= int(card[1:])
+        n_cards = 0
+        v_cards = 0
 
-       # # Check players.
-       for player in self.sequence:
-           for card in player.public_commits:
-               if card[0] == card_type:
-                   n_cards += 1
-                   v_cards += int(card[1:])
-           for card in player.private_commits:
-               if card[0] == card_type:
-                   n_cards += 1
-                   v_cards += int(card[1:])
+        # # Check pool.
+        for card in self.pool:
+            if card[0] == card_type:
+                n_cards += 1
+                v_cards = int(card[1:])
 
-       return n_cards, v_cards
+        # # Check players.
+        for player in self.sequence:
+            for card in player.public_commits:
+                if card[0] == card_type:
+                    n_cards += 1
+                    v_cards += int(card[1:])
+            for card in player.private_commits:
+                if card[0] == card_type:
+                    n_cards += 1
+                    v_cards += int(card[1:])
+
+        return n_cards, v_cards
 
     # def summarize_state(self):
 
@@ -271,6 +271,37 @@ class Game:
         self.play_round()
         self.play_round()
         self.end_turn(report=report)
+
+    def play_game(self, n_turns):
+
+        # Memory for time-series scores.
+        ts_scores = {p.name: [] for p in self.players}
+
+        # Play n_turns.
+        for t in range(n_turns):
+            self.play_turn(report=False)
+            for player in self.players:
+                ts_scores[player.name].append(player.score)
+
+        # Generate (final) game result and timeseries result.
+        result = []
+        result_ts = []
+
+        # Get information for each player.
+        for player in self.players:
+            result.append(
+                {'name': player.name,
+                 'score': ts_scores[player.name][-1],
+                 'strategy': player.strategy.name}
+            )
+            result_ts.append(
+                {'name': player.name,
+                 'scores': ts_scores[player.name],
+                 'strategy': player.strategy.name}
+            )
+
+        self.result = result
+        self.result_ts = result_ts
 
 
 class Game_State:
